@@ -1,24 +1,50 @@
 services:
-  # --- CONFIG SERVERS (replica set configReplSet) ---
+  # --- CONFIG SERVERS ---
   configsvr1:
     image: mongo:8.0
     container_name: configsvr1
-    command: --configsvr --replSet configReplSet --port 27019 --bind_ip_all
+    command:
+      [
+        "--configsvr",
+        "--replSet",
+        "configReplSet",
+        "--port",
+        "27019",
+        "--bind_ip_all",
+      ]
     volumes:
       - ./data/configsvr1:/data/db
       - ./init/init_configsvr.js:/docker-entrypoint-initdb.d/init_configsvr.js
+    ports:
+      - "27019:27019"
 
   configsvr2:
     image: mongo:8.0
     container_name: configsvr2
-    command: --configsvr --replSet configReplSet --port 27019 --bind_ip_all
+    command:
+      [
+        "--configsvr",
+        "--replSet",
+        "configReplSet",
+        "--port",
+        "27019",
+        "--bind_ip_all",
+      ]
     volumes:
       - ./data/configsvr2:/data/db
 
   configsvr3:
     image: mongo:8.0
     container_name: configsvr3
-    command: mongod --configsvr --replSet configReplSet --port 27019 --bind_ip_all
+    command:
+      [
+        "--configsvr",
+        "--replSet",
+        "configReplSet",
+        "--port",
+        "27019",
+        "--bind_ip_all",
+      ]
     volumes:
       - ./data/configsvr3:/data/db
 
@@ -145,14 +171,14 @@ services:
       - ./data/historique:/data/db
 
   # --- ROUTEURS (mongos) : routeur_1 et routeur_2 ---
+  # --- ROUTEURS ---
   routeur_1:
     image: mongo:8.0
     container_name: routeur_1
     depends_on:
       - configsvr1
-      - principal_a
-      - principal_b
-      - principal_c
+      - configsvr2
+      - configsvr3
     command: bash -c "./init/wait-for.sh configsvr1 27019 60 && mongos --configdb configReplSet/configsvr1:27019,configsvr2:27019,configsvr3:27019 --bind_ip_all --port 27020"
     ports:
       - "27020:27020"
@@ -165,12 +191,11 @@ services:
     container_name: routeur_2
     depends_on:
       - configsvr1
-      - principal_a
-      - principal_b
-      - principal_c
+      - configsvr2
+      - configsvr3
     command: bash -c "./init/wait-for.sh configsvr1 27019 60 && mongos --configdb configReplSet/configsvr1:27019,configsvr2:27019,configsvr3:27019 --bind_ip_all --port 27021"
     ports:
-      - "27021:27020"
+      - "27021:27021"
     volumes:
       - ./init/init_mongos.sh:/init/init_mongos.sh
       - ./init/wait-for.sh:/init/wait-for.sh
