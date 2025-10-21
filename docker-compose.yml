@@ -1,0 +1,180 @@
+services:
+  # --- CONFIG SERVERS (replica set configReplSet) ---
+  configsvr1:
+    image: mongo:8.0
+    container_name: configsvr1
+    command: mongod --configsvr --replSet configReplSet --port 27019 --bind_ip_all
+    volumes:
+      - ./data/configsvr1:/data/db
+      - ./init/init_configsvr.js:/docker-entrypoint-initdb.d/init_configsvr.js
+
+  configsvr2:
+    image: mongo:8.0
+    container_name: configsvr2
+    command: mongod --configsvr --replSet configReplSet --port 27019 --bind_ip_all
+    volumes:
+      - ./data/configsvr2:/data/db
+
+  configsvr3:
+    image: mongo:8.0
+    container_name: configsvr3
+    command: mongod --configsvr --replSet configReplSet --port 27019 --bind_ip_all
+    volumes:
+      - ./data/configsvr3:/data/db
+
+  # --- SHARD A (principal_a + 3 secondaires) ---
+  principal_a:
+    image: mongo:8.0
+    container_name: principal_a
+    command: mongod --shardsvr --replSet rsA --port 27017 --bind_ip_all
+    volumes:
+      - ./data/principal_a:/data/db
+      - ./init/init_shards.js:/init/init_shards.js
+    depends_on:
+      - configsvr1
+
+  secondaire_a_1:
+    image: mongo:8.0
+    container_name: secondaire_a_1
+    command: mongod --shardsvr --replSet rsA --port 27017 --bind_ip_all
+    volumes:
+      - ./data/secondaire_a_1:/data/db
+    depends_on:
+      - principal_a
+
+  secondaire_a_2:
+    image: mongo:8.0
+    container_name: secondaire_a_2
+    command: mongod --shardsvr --replSet rsA --port 27017 --bind_ip_all
+    volumes:
+      - ./data/secondaire_a_2:/data/db
+    depends_on:
+      - principal_a
+
+  secondaire_a_3:
+    image: mongo:8.0
+    container_name: secondaire_a_3
+    command: mongod --shardsvr --replSet rsA --port 27017 --bind_ip_all
+    volumes:
+      - ./data/secondaire_a_3:/data/db
+    depends_on:
+      - principal_a
+
+  # --- SHARD B (principal_b + 3 secondaires) ---
+  principal_b:
+    image: mongo:8.0
+    container_name: principal_b
+    command: mongod --shardsvr --replSet rsB --port 27017 --bind_ip_all
+    volumes:
+      - ./data/principal_b:/data/db
+      - ./init/init_shards.js:/init/init_shards.js
+    depends_on:
+      - configsvr1
+
+  secondaire_b_1:
+    image: mongo:8.0
+    container_name: secondaire_b_1
+    command: mongod --shardsvr --replSet rsB --port 27017 --bind_ip_all
+    volumes:
+      - ./data/secondaire_b_1:/data/db
+    depends_on:
+      - principal_b
+
+  secondaire_b_2:
+    image: mongo:8.0
+    container_name: secondaire_b_2
+    command: mongod --shardsvr --replSet rsB --port 27017 --bind_ip_all
+    volumes:
+      - ./data/secondaire_b_2:/data/db
+    depends_on:
+      - principal_b
+
+  secondaire_b_3:
+    image: mongo:8.0
+    container_name: secondaire_b_3
+    command: mongod --shardsvr --replSet rsB --port 27017 --bind_ip_all
+    volumes:
+      - ./data/secondaire_b_3:/data/db
+    depends_on:
+      - principal_b
+
+  # --- SHARD C (principal_c + 3 secondaires) ---
+  principal_c:
+    image: mongo:8.0
+    container_name: principal_c
+    command: mongod --shardsvr --replSet rsC --port 27017 --bind_ip_all
+    volumes:
+      - ./data/principal_c:/data/db
+      - ./init/init_shards.js:/init/init_shards.js
+    depends_on:
+      - configsvr1
+
+  secondaire_c_1:
+    image: mongo:8.0
+    container_name: secondaire_c_1
+    command: mongod --shardsvr --replSet rsC --port 27017 --bind_ip_all
+    volumes:
+      - ./data/secondaire_c_1:/data/db
+    depends_on:
+      - principal_c
+
+  secondaire_c_2:
+    image: mongo:8.0
+    container_name: secondaire_c_2
+    command: mongod --shardsvr --replSet rsC --port 27017 --bind_ip_all
+    volumes:
+      - ./data/secondaire_c_2:/data/db
+    depends_on:
+      - principal_c
+
+  secondaire_c_3:
+    image: mongo:8.0
+    container_name: secondaire_c_3
+    command: mongod --shardsvr --replSet rsC --port 27017 --bind_ip_all
+    volumes:
+      - ./data/secondaire_c_3:/data/db
+    depends_on:
+      - principal_c
+
+  # --- HISTORIQUE : serveur mongo pour stocker les changements ---
+  historique:
+    image: mongo:8.0
+    container_name: historique
+    command: mongod --port 27017 --bind_ip_all
+    volumes:
+      - ./data/historique:/data/db
+
+  # --- ROUTEURS (mongos) : routeur_1 et routeur_2 ---
+  routeur_1:
+    image: mongo:8.0
+    container_name: routeur_1
+    depends_on:
+      - configsvr1
+      - principal_a
+      - principal_b
+      - principal_c
+    command: bash -c "./init/wait-for.sh configsvr1 27019 60 && mongos --configdb configReplSet/configsvr1:27019,configsvr2:27019,configsvr3:27019 --bind_ip_all --port 27020"
+    ports:
+      - "27020:27020"
+    volumes:
+      - ./init/init_mongos.sh:/init/init_mongos.sh
+      - ./init/wait-for.sh:/init/wait-for.sh
+
+  routeur_2:
+    image: mongo:8.0
+    container_name: routeur_2
+    depends_on:
+      - configsvr1
+      - principal_a
+      - principal_b
+      - principal_c
+    command: bash -c "./init/wait-for.sh configsvr1 27019 60 && mongos --configdb configReplSet/configsvr1:27019,configsvr2:27019,configsvr3:27019 --bind_ip_all --port 27021"
+    ports:
+      - "27021:27020"
+    volumes:
+      - ./init/init_mongos.sh:/init/init_mongos.sh
+      - ./init/wait-for.sh:/init/wait-for.sh
+
+networks:
+  default:
+    name: mongodb_cluster_net
