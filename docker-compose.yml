@@ -3,7 +3,7 @@ services:
   configsvr1:
     image: mongo:8.0
     container_name: configsvr1
-    command: mongod --configsvr --replSet configReplSet --port 27019 --bind_ip_all
+    command: --configsvr --replSet configReplSet --port 27019 --bind_ip_all
     volumes:
       - ./data/configsvr1:/data/db
       - ./init/init_configsvr.js:/docker-entrypoint-initdb.d/init_configsvr.js
@@ -11,7 +11,7 @@ services:
   configsvr2:
     image: mongo:8.0
     container_name: configsvr2
-    command: mongod --configsvr --replSet configReplSet --port 27019 --bind_ip_all
+    command: --configsvr --replSet configReplSet --port 27019 --bind_ip_all
     volumes:
       - ./data/configsvr2:/data/db
 
@@ -26,7 +26,7 @@ services:
   principal_a:
     image: mongo:8.0
     container_name: principal_a
-    command: mongod --shardsvr --replSet rsA --port 27017 --bind_ip_all
+    command: --shardsvr --replSet rsA --port 27017 --bind_ip_all
     volumes:
       - ./data/principal_a:/data/db
       - ./init/init_shards.js:/init/init_shards.js
