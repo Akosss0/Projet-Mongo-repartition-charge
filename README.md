@@ -1,8 +1,6 @@
 # Projet-Mongo-repartition-charge
 ## `guide_installation.md`
 
-```markdown
-# Guide d'installation et d'exécution
 
 ## Prérequis
 - Docker & Docker Compose
