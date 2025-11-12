@@ -136,7 +136,66 @@ services:
 
     #------Fin de Config du principal_b------------------#
 
-  #Congig routeur
+  #------Config du principal_b------------------#
+  principal_c:
+    image: mongo:latest
+    container_name: principal_c
+    command: >
+      mongod --shardsvr --replSet principal_c
+             --port 27027
+             --dbpath /data/db
+             --bind_ip_all
+    ports:
+      - "27027:27027"
+    volumes:
+      - ./data/principal_c-principal_c:/data/db
+    restart: unless-stopped
+
+  secondaire_c_1:
+    image: mongo:latest
+    container_name: secondaire_c_1
+    command: >
+      mongod --shardsvr --replSet principal_c
+             --port 27028
+             --dbpath /data/db
+             --bind_ip_all
+    ports:
+      - "27028:27028"
+    volumes:
+      - ./data/principal_c-secondaire_c_1:/data/db
+    restart: unless-stopped
+
+  secondaire_c_2:
+    image: mongo:latest
+    container_name: secondaire_c_2
+    command: >
+      mongod --shardsvr --replSet principal_c
+             --port 27029
+             --dbpath /data/db
+             --bind_ip_all
+    ports:
+      - "27029:27029"
+    volumes:
+      - ./data/principal_c-secondaire_c_2:/data/db
+    restart: unless-stopped
+
+  secondaire_c_3:
+    image: mongo:latest
+    container_name: secondaire_c_3
+    command: >
+      mongod --shardsvr --replSet principal_c
+             --port 27030
+             --dbpath /data/db
+             --bind_ip_all
+    ports:
+      - "27030:27030"
+    volumes:
+      - ./data/principal_c-secondaire_c_3:/data/db
+    restart: unless-stopped
+
+    #------Fin de Config du principal_c------------------#
+
+  #Congif routeur
   mongos:
     image: mongo:latest
     container_name: mongos
@@ -144,11 +203,13 @@ services:
       - configsvr
       - principal_a
       - principal_b
+      - principal_c
     command: >
       bash -c "sleep 10 && 
       mongosh --host configsvr --port 27018 /init/init-replica.js &&
       mongosh --host principal_a --port 27019 /init/init-shard.js &&
-      mongosh --host principal_b --port 27023 /init/init-shard.js
+      mongosh --host principal_b --port 27023 /init/init-shard.js &&
+      mongosh --host principal_c --port 27027 /init/init-shard.js &&
       mongos --configdb configReplSet/configsvr:27018 --bind_ip_all --port 27017 &
       sleep 10 &&
       mongosh --host localhost --port 27017 /init/init-router.js &&

@@ -18,3 +18,13 @@ rs.initiate({
         { _id: 3, host: "secondaire_b_3:27026" } //Secondaire_a_3
     ]
 });
+
+rs.initiate({
+    _id: "principal_c",
+    members: [
+        { _id: 0, host: "principal_c:27027" }, //Principal a
+        { _id: 1, host: "principal_c_1:27028" }, //Secondaire_a_1
+        { _id: 2, host: "principal_c_2:27029" }, //Secondaire_a_2
+        { _id: 3, host: "principal_c_27030" } //Secondaire_a_3
+    ]
+});
