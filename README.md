@@ -1,17 +1,24 @@
 # Projet-Mongo-repartition-charge
+
 ## `guide_installation.md`
 
+````markdown
+# Guide d'installation et d'exécution
 
 ## Prérequis
+
 - Docker & Docker Compose
 - Python 3.8+ et pip
 - `pymongo` (pip install pymongo)
 
 ## Lancement
+
 1. Démarrer les conteneurs :
    ```bash
    docker-compose up -d
    ```
+````
+
 2. Initialiser les replica sets des primaires (exécuter dans le conteneur correspondant) :
    ```bash
    docker exec -it principal_a mongosh --port 27017
@@ -36,6 +43,7 @@
    ```
 
 ## Importer les données (ex. books.json)
+
 - Via mongoimport :
   ```bash
   mongoimport --host localhost --port 27020 --db books --collection authors --file books.json --jsonArray
@@ -46,10 +54,39 @@
   ```
 
 ## Tests
+
 - Test de connectivité : `python src/test_reseau.py`
 - Vérifier le sharding : dans `mongosh` sur `routeur_1` : `sh.status()`
 
 ## Arrêt et nettoyage
+
 ```bash
 docker-compose down -v
+```
+
+# La commande "replSetGetStatus" permet d'avoir les informations des réplicats
+
+## Pour vérifier si tous les réplicats sont à jour :
+
+```
+from pymongo import MongoClient
+
+client = MongoClient("mongodb://mongo1:27017,mongo2:27017,mongo3:27017/?replicaSet=rs0")
+status = client.admin.command("replSetGetStatus")
+
+for member in status["members"]:
+    print(f"Member: {member['name']}, State: {member['stateStr']}, Optime: {member['optime']['ts']}")
+```
+
+optime: Montre la dernière opération que chaque membre à répliquer. S'ils ont tous la même, ils sont synchronisés
+
+# On peut aussi sélectionner les réplicats secondaires.
+
+On peut forcer la lecture depuis un membre spécifique :
+
+```
+# Read from a secondary (if allowed by your read preference)
+secondary_client = MongoClient("mongodb://mongo2:27017/?replicaSet=rs0", read_preference="secondary")
+doc = secondary_client.mydatabase.mycollection.find_one()
+print(doc)
 ```
